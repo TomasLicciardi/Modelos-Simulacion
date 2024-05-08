@@ -23,6 +23,9 @@ class Proyecto:
         )  # Área de la superficie del cilindro
         self.resistencia = resistencia
         self.voltaje = voltaje
+        self.descenso_activo = False
+        self.segundos_restantes = 0
+        self.temperatura_exterior_normal = temperatura_exterior
 
     # Métodos para cálculos
     def calcular_calor(self):
@@ -36,14 +39,11 @@ class Proyecto:
             potencia = ((self.voltaje ** 2) / self.resistencia)
         else:
             potencia = self.calcular_calor() / self.tiempo
-            #print(potencia)
         return potencia 
     
     def temperatura_por_segundo(self):
         potencia = self.calcular_potencia()
         aumento_temperatura = potencia / ((self.capacidad/1000) * self.capacidad_calorifica)
-        print(aumento_temperatura)
-        print(potencia)
         return aumento_temperatura
     
     def obtener_temperaturas_sin_perdida(self):
@@ -60,43 +60,52 @@ class Proyecto:
         segundos = []
         temperaturas = []
         temperatura_actual = self.temperatura_inicial
-        
-        for seg in range(self.tiempo + 1):
-            num_aleatorio = random.randint(1,300)
-            if num_aleatorio == 1:
-                descenso_temperatura = random.randint(-50, 0)
-                duracion= random.randint(1, 40)
-                variacion_temperatura = descenso_temperatura / duracion
-                for i in range(duracion):
-                    segundos.append(seg)
-                    temperaturas.append(temperatura_actual)
-                    temperatura_actual += variacion_temperatura
+        tiempo = 0
+        while temperatura_actual <= 80:
+            if self.descenso_activo:
+                if self.segundos_restantes > 0:
+                    self.segundos_restantes -= 1
+                else:
+                    self.temperatura_exterior = self.temperatura_exterior_normal
+                    self.descenso_activo = False
+                tiempo += 1
             else:
-                calor_perdido = (self.conductividad_de_telgopor * self.superficie * (temperatura_actual - self.temperatura_exterior) / self.espesor)
-                variacion_temperatura = self.temperatura_por_segundo() - (calor_perdido / self.capacidad_calorifica)
-                temperatura_actual += variacion_temperatura
-                segundos.append(seg)
-                temperaturas.append(temperatura_actual)
+                num_aleatorio = random.randint(1,300)
+                if num_aleatorio == 1:
+                    descenso_temperatura = random.randint(-50, 0)
+                    duracion= random.randint(1, 40)
+                    self.temperatura_exterior = descenso_temperatura
+                    self.segundos_restantes = duracion
+                    self.descenso_activo = True
+                tiempo += 1
+            
+            calor_perdido = (self.conductividad_de_telgopor * self.superficie * (temperatura_actual - self.temperatura_exterior) / self.espesor)
+            variacion_temperatura = self.temperatura_por_segundo() - (calor_perdido / self.capacidad_calorifica)
+            temperatura_actual += variacion_temperatura
+            segundos.append(tiempo)
+            temperaturas.append(temperatura_actual)
         
         return segundos, temperaturas
 
 def main():
+    temperatura_inicial = 20
     temperatura_final = 80
+    temperatura_exterior = 20
+    '''
     resistencias = np.random.uniform(40, 50, 5)
     temperaturas_iniciales = np.random.normal(10, 5, 5)
     temperaturas_exteriores = np.random.uniform(-20,50,5)
     voltajes = np.random.normal(220, 40, 5)
-    
+    '''
     opcion = int(input("1 para temperatura sin pérdida o 2 para temperatura con pérdida de calor: "))
     
-    for i in range(5):
-        proyecto = Proyecto(temperaturas_iniciales[i],temperatura_final , temperaturas_exteriores[i],resistencias[i],voltajes[i])
-        if opcion == 1:
-            segundos, temperaturas = proyecto.obtener_temperaturas_sin_perdida()
-            plt.plot(segundos, temperaturas)
-        elif opcion == 2:
-            segundos, temperaturas = proyecto.obtener_temperaturas_con_perdida()
-            plt.plot(segundos, temperaturas)
+    proyecto = Proyecto(temperatura_inicial,temperatura_final ,temperatura_exterior)
+    if opcion == 1:
+        segundos, temperaturas = proyecto.obtener_temperaturas_sin_perdida()
+        plt.plot(segundos, temperaturas)
+    elif opcion == 2:
+        segundos, temperaturas = proyecto.obtener_temperaturas_con_perdida()
+        plt.plot(segundos, temperaturas)
 
     # Configuración del gráfico
     plt.xlabel("Tiempo (s)")
