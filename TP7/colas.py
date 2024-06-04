@@ -3,6 +3,7 @@ import random
 import queue
 import matplotlib.pyplot as plt
 
+
 # Constantes y parámetros
 HORAS_OPERACION = 4  # 8 a 12 horas = 4 horas
 SEGUNDOS_POR_HORA = 3600
@@ -158,7 +159,7 @@ def graficar_resultados(resultados):
     plt.show()
 
 def main():
-    num_boxes = 4
+    num_boxes = 1
     simulacion = Simulacion(num_boxes)
     simulacion.run()
     resultados = calcular_resultados(simulacion)
